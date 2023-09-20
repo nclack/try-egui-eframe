@@ -38,13 +38,13 @@ impl TemplateApp {
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
-        let mut s: Self = if let Some(storage) = cc.storage {
+        let mut app: Self = if let Some(storage) = cc.storage {
             eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
         } else {
             Default::default()
         };
-        s.sh = MyShader::new(cc);
-        s
+        // app.sh = MyShader::new(cc);
+        app
     }
 }
 
@@ -116,11 +116,11 @@ impl eframe::App for TemplateApp {
             ui.label(format!("Hey there: {:?}", label));
             ui.add(im);
             ui.label("AFTER THE IMAGE");
-            if let Some(sh) = sh {
-                ui.add(sh);
-            } else {
-                ui.label("MyShader failed to init");
-            }
+            // if let Some(sh) = sh {
+            //     ui.add(sh);
+            // } else {
+            //     ui.label("MyShader failed to init");
+            // }
             egui::warn_if_debug_build(ui);
         });
 

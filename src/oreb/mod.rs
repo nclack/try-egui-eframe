@@ -200,9 +200,8 @@ impl Painter {
         // self.rc.queue.submit(None);
     }
 
-    pub fn set_uniforms(&self, rc: &RenderState, settings: &PainterSettings) {
-        rc.queue
-            .write_buffer(&self.uniforms, 0, unsafe { as_raw_bytes(settings) });
+    pub fn set_uniforms(&self, queue: &Queue, settings: &PainterSettings) {
+        queue.write_buffer(&self.uniforms, 0, unsafe { as_raw_bytes(settings) });
         // self.rc.commands.submit(None);
     }
 

@@ -28,15 +28,25 @@ impl Widget for &mut MyShader {
         );
 
         let callback = CallbackFn::new()
-            .prepare(move |_device, queue, _encoderr, resources| {
+            .prepare(move |_device, queue, _encoder, resources| {
                 let painter: &mut oreb::Painter = resources.get_mut().unwrap();
                 let time_seconds = 0.0; // TODO: figure out animation
                 let (vertices, indices) =
                     encode_geometry(&make_rects(time_seconds, -0.9, 0.9, -0.9, 0.9));
                 painter.set_geometry(queue, &vertices, &indices);
+                painter.set_uniforms(
+                    queue,
+                    // TODO: styling?
+                    &oreb::PainterSettings {
+                        edge: [1.0, 1.0, 1.0, 0.5],
+                        fill: [0.8, 0.8, 0.8, 0.2],
+                        line_width_px: 1.0,
+                        corner_radius_px: 0.0,
+                    },
+                );
                 Vec::new()
             })
-            .paint(move |info, render_pass, resources| {
+            .paint(move |_info, render_pass, resources| {
                 let painter: &oreb::Painter = resources.get().unwrap();
                 painter.paint(render_pass);
             });
