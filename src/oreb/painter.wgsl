@@ -73,6 +73,6 @@ fn fs(in: VertexOutput) -> @location(0) vec4<f32> {
         discard;
         // return vec4(in.tex_coords, 0.0, 1.0);
         // let d = d * 0.05;
-        return vec4(0.0);
     }
+    return vec4(0.0);
 }

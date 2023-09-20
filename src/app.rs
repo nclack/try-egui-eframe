@@ -43,7 +43,7 @@ impl TemplateApp {
         } else {
             Default::default()
         };
-        // app.sh = MyShader::new(cc);
+        app.sh = MyShader::new(cc);
         app
     }
 }
@@ -116,11 +116,11 @@ impl eframe::App for TemplateApp {
             ui.label(format!("Hey there: {:?}", label));
             ui.add(im);
             ui.label("AFTER THE IMAGE");
-            // if let Some(sh) = sh {
-            //     ui.add(sh);
-            // } else {
-            //     ui.label("MyShader failed to init");
-            // }
+            if let Some(sh) = sh {
+                ui.add(sh);
+            } else {
+                ui.label("MyShader failed to init");
+            }
             egui::warn_if_debug_build(ui);
         });
 
