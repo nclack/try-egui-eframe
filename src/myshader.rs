@@ -1,7 +1,7 @@
 use std::{f32::consts::PI, sync::Arc};
 
-use eframe::{egui_wgpu::CallbackFn, wgpu::CommandBuffer, CreationContext};
-use egui::{mutex::Mutex, PaintCallback, Widget};
+use eframe::{CreationContext, egui_wgpu::CallbackFn};
+use egui::{PaintCallback, Widget};
 
 use crate::oreb::{self, Vertex};
 
@@ -38,10 +38,11 @@ impl Widget for &mut MyShader {
                     queue,
                     // TODO: styling?
                     &oreb::PainterSettings {
-                        edge: [1.0, 1.0, 1.0, 0.5],
+                        // raw
+                        edge: [1.0, 0.6, 0.1, 0.5],
                         fill: [0.8, 0.8, 0.8, 0.2],
-                        line_width_px: 1.0,
-                        corner_radius_px: 0.0,
+                        line_width_px: 0.5,
+                        corner_radius_px: 6.0,
                     },
                 );
                 Vec::new()
@@ -119,17 +120,17 @@ fn encode_geometry(rects: &[Rect]) -> (Vec<Vertex>, Vec<u32>) {
                 uv: [-0.5, -0.5 + side / half_w],
             },
         ]
-        .map(|mut v| {
-            // rotate about (0,0) by theta
-            // then translate
-            v.xyz[0] += half_w * 0.5;
-            v.xyz[1] += half_h * 0.5;
-            let x = v.xyz[0] * c - v.xyz[1] * s;
-            let y = v.xyz[0] * s + v.xyz[1] * c;
-            v.xyz[0] = x + cx;
-            v.xyz[1] = y + cy;
-            v
-        })
+            .map(|mut v| {
+                // rotate about (0,0) by theta
+                // then translate
+                v.xyz[0] += half_w * 0.5;
+                v.xyz[1] += half_h * 0.5;
+                let x = v.xyz[0] * c - v.xyz[1] * s;
+                let y = v.xyz[0] * s + v.xyz[1] * c;
+                v.xyz[0] = x + cx;
+                v.xyz[1] = y + cy;
+                v
+            })
     }
 
     let verts = rects

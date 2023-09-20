@@ -48,6 +48,10 @@ fn sd_round_box(p: vec2<f32>, b: vec2<f32>, r: f32) -> f32 {
     return length(max(q, vec2<f32>())) + min(max(q.x, q.y), 0.0) - r;
 }
 
+fn premultiply(src:vec4<f32>)->vec4<f32> {
+    return vec4(src.rgb*src.a,src.a);
+}
+
 @fragment
 fn fs(in: VertexOutput) -> @location(0) vec4<f32> {
     // Scale so distance is evaluated in viewport space.
@@ -64,11 +68,11 @@ fn fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
     if (d < -setttings.line_width_px) {
         let eps = d + setttings.line_width_px;
-        return mix(setttings.edge, setttings.fill, saturate(-eps));
-    } else if (d < 0.0) {
+        return premultiply(mix(setttings.edge, setttings.fill, saturate(-eps)));
+    } else if (d < 0.51) {
         var color = setttings.edge;
-        color.a = saturate(0.5 - d);
-        return color;
+        color.a = saturate(0.5 - d)*setttings.edge.a;
+        return premultiply(color);
     } else {
         discard;
         // return vec4(in.tex_coords, 0.0, 1.0);

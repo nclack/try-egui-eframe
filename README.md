@@ -16,3 +16,7 @@ $env:RUSTFLAGS="--cfg=web_sys_unstable_apis"; trunk serve
 ```
 
 `cargo run` will start a desktop app.
+
+## Trouble?
+
+1. Try clearing the application's storage in the browser. I did this in chrome by opening the dev tools, navigating to the "Application" tab, clicking on "Storage" and hitting the "Clear site data" button. Then I refresh the page. 
