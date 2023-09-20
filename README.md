@@ -7,6 +7,12 @@ driven widgets rendered in a browser.
 
 Based on [eframe template](https://github.com/emilk/eframe_template/)
 
-Run `RUSTFLAGS=--cfg=web_sys_unstable_apis trunk serve` to serve as a web app.
+To serve as a web app, run:
+```bash
+RUSTFLAGS=--cfg=web_sys_unstable_apis trunk serve
+```
+```powershell
+$env:RUSTFLAGS="--cfg=web_sys_unstable_apis"; trunk serve
+```
 
 `cargo run` will start a desktop app.

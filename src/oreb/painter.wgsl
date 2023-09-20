@@ -62,10 +62,10 @@ fn fs(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let d = sd_round_box(in.tex_coords.xy / s, 0.5 / s, setttings.corner_radius_px);
 
-    if d < -setttings.line_width_px {
+    if (d < -setttings.line_width_px) {
         let eps = d + setttings.line_width_px;
         return mix(setttings.edge, setttings.fill, saturate(-eps));
-    } else if d < 0.0 {
+    } else if (d < 0.0) {
         var color = setttings.edge;
         color.a = saturate(0.5 - d);
         return color;
@@ -73,6 +73,6 @@ fn fs(in: VertexOutput) -> @location(0) vec4<f32> {
         discard;
         // return vec4(in.tex_coords, 0.0, 1.0);
         // let d = d * 0.05;
-        // return vec4(1.0 - d, 0.7 - 0.3 * d, 0.4 - 0.1 * d, 1.0 - 0.1 * d);
+        return vec4(0.0);
     }
 }
