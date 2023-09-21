@@ -117,6 +117,17 @@ impl eframe::App for TemplateApp {
             ui.add(im);
             ui.label("AFTER THE IMAGE");
             if let Some(sh) = sh {
+                ui.color_edit_button_rgba_unmultiplied(&mut sh.fill_color);
+                ui.color_edit_button_rgba_unmultiplied(&mut sh.line_color);
+                ui.add(
+                    egui::Slider::new(&mut sh.line_width_px, 0.0..=10.0).text("line width (px)"),
+                );
+                ui.add(
+                    egui::Slider::new(&mut sh.corner_radius_px, 0.0..=50.0)
+                        .text("corner radius (px)"),
+                );
+                ui.add(egui::Slider::new(&mut sh.time_seconds, -1.0..=1.0).text("time (s)"));
+                ui.add(egui::Slider::new(&mut sh.rect_count, 1..=100).text("Rectangle count"));
                 ui.add(sh);
             } else {
                 ui.label("MyShader failed to init");

@@ -1,11 +1,18 @@
 use std::{f32::consts::PI, sync::Arc};
 
-use eframe::{CreationContext, egui_wgpu::CallbackFn};
+use eframe::{egui_wgpu::CallbackFn, CreationContext};
 use egui::{PaintCallback, Widget};
 
 use crate::oreb::{self, Vertex};
 
-pub struct MyShader {}
+pub struct MyShader {
+    pub line_width_px: f32,
+    pub corner_radius_px: f32,
+    pub rect_count: u32,
+    pub time_seconds: f32,
+    pub line_color: [f32; 4],
+    pub fill_color: [f32; 4],
+}
 
 impl MyShader {
     pub fn new<'a>(cc: &'a CreationContext<'a>) -> Option<Self> {
@@ -16,7 +23,14 @@ impl MyShader {
         // instead of storing the pipeline in our `MyShader` struct, we insert it into the
         // `paint_callback_resources` type map, which is stored alongside the render pass.
         rc.renderer.write().paint_callback_resources.insert(painter);
-        Some(Self {})
+        Some(Self {
+            line_width_px: 0.5,
+            corner_radius_px: 0.0,
+            rect_count: 20,
+            time_seconds: 0.0,
+            line_color: [1.0, 0.6, 0.1, 0.5],
+            fill_color: [0.8, 0.8, 0.8, 0.2],
+        })
     }
 }
 
@@ -27,22 +41,29 @@ impl Widget for &mut MyShader {
             egui::Sense::focusable_noninteractive(),
         );
 
+        let MyShader {
+            line_width_px,
+            corner_radius_px,
+            rect_count,
+            time_seconds,
+            line_color,
+            fill_color,
+        } = *self;
         let callback = CallbackFn::new()
             .prepare(move |_device, queue, _encoder, resources| {
                 let painter: &mut oreb::Painter = resources.get_mut().unwrap();
-                let time_seconds = 0.0; // TODO: figure out animation
                 let (vertices, indices) =
-                    encode_geometry(&make_rects(time_seconds, -0.9, 0.9, -0.9, 0.9));
+                    encode_geometry(&make_rects(time_seconds, rect_count, -0.9, 0.9, -0.9, 0.9));
                 painter.set_geometry(queue, &vertices, &indices);
                 painter.set_uniforms(
                     queue,
                     // TODO: styling?
                     &oreb::PainterSettings {
                         // raw
-                        edge: [1.0, 0.6, 0.1, 0.5],
-                        fill: [0.8, 0.8, 0.8, 0.2],
-                        line_width_px: 0.5,
-                        corner_radius_px: 6.0,
+                        edge: line_color,
+                        fill: fill_color,
+                        line_width_px,
+                        corner_radius_px,
                     },
                 );
                 Vec::new()
@@ -69,8 +90,7 @@ struct Rect {
 
 // x0,x1,y0,y1 are the bounds within which the rectangles should be generated.
 // They should be in clip space.
-fn make_rects(time_seconds: f32, x0: f32, x1: f32, y0: f32, y1: f32) -> Vec<Rect> {
-    let steps = 100;
+fn make_rects(time_seconds: f32, steps: u32, x0: f32, x1: f32, y0: f32, y1: f32) -> Vec<Rect> {
     let dx = (x1 - x0) / (steps + 1) as f32;
     let dy = y1 - y0;
     let sz = dx.max(0.1);
@@ -120,17 +140,17 @@ fn encode_geometry(rects: &[Rect]) -> (Vec<Vertex>, Vec<u32>) {
                 uv: [-0.5, -0.5 + side / half_w],
             },
         ]
-            .map(|mut v| {
-                // rotate about (0,0) by theta
-                // then translate
-                v.xyz[0] += half_w * 0.5;
-                v.xyz[1] += half_h * 0.5;
-                let x = v.xyz[0] * c - v.xyz[1] * s;
-                let y = v.xyz[0] * s + v.xyz[1] * c;
-                v.xyz[0] = x + cx;
-                v.xyz[1] = y + cy;
-                v
-            })
+        .map(|mut v| {
+            // rotate about (0,0) by theta
+            // then translate
+            v.xyz[0] += half_w * 0.5;
+            v.xyz[1] += half_h * 0.5;
+            let x = v.xyz[0] * c - v.xyz[1] * s;
+            let y = v.xyz[0] * s + v.xyz[1] * c;
+            v.xyz[0] = x + cx;
+            v.xyz[1] = y + cy;
+            v
+        })
     }
 
     let verts = rects
