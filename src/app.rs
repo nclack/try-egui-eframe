@@ -1,12 +1,10 @@
+use log::info;
+
 use crate::{myimage::MyImage, myshader::MyShader};
 
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[derive(serde::Deserialize, serde::Serialize)]
-#[serde(default)] // if we add new fields, give them default values when deserializing old state
-pub struct TemplateApp {
-    // Example stuff:
-    label: String,
-
+#[derive(serde::Deserialize, serde::Serialize, Debug)]
+#[serde(default)]
+pub struct MainApp {
     // this how you opt-out of serialization of a member
     #[serde(skip)]
     value: f32,
@@ -14,23 +12,20 @@ pub struct TemplateApp {
     #[serde(skip)]
     im: MyImage,
 
-    #[serde(skip)]
-    sh: Option<MyShader>,
+    sh: MyShader,
 }
 
-impl Default for TemplateApp {
+impl Default for MainApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
             value: 2.7,
             im: MyImage::default(),
-            sh: None,
+            sh: MyShader::default(),
         }
     }
 }
 
-impl TemplateApp {
+impl MainApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         // This is also where you can customize the look and feel of egui using
@@ -38,31 +33,22 @@ impl TemplateApp {
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
-        let mut app: Self = if let Some(storage) = cc.storage {
-            eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default()
+        let app: Self = if let Some(storage) = cc.storage {
+            info!("LOAD SETTINGS");
+            dbg!(eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default())
         } else {
             Default::default()
         };
-        app.sh = MyShader::new(cc);
+        app.sh.init(cc);
         app
     }
 }
 
-impl eframe::App for TemplateApp {
+impl eframe::App for MainApp {
     /// Called each time the UI needs repainting, which may be many times per second.
     /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self {
-            label,
-            value,
-            im,
-            sh,
-        } = self;
-
-        // Examples of how to create different panels and windows.
-        // Pick whichever suits you.
-        // Tip: a good default choice is to just keep the `CentralPanel`.
-        // For inspiration and more examples, go to https://emilk.github.io/egui
+        let Self { value: _, im, sh } = self;
 
         #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -77,76 +63,40 @@ impl eframe::App for TemplateApp {
         });
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.heading("Side Panel");
+            ui.heading("Rounded rectangles");
 
             ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(label);
+                ui.color_edit_button_rgba_unmultiplied(&mut sh.fill_color);
+                ui.label("fill");
+                ui.add_space(10.0);
+                ui.color_edit_button_rgba_unmultiplied(&mut sh.line_color);
+                ui.label("edge");
             });
-
-            ui.add(egui::Slider::new(value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                *value += 1.0;
-            }
+            ui.add(egui::Slider::new(&mut sh.line_width_px, 0.0..=10.0).text("line width (px)"));
+            ui.add(
+                egui::Slider::new(&mut sh.corner_radius_px, 0.0..=50.0).text("corner radius (px)"),
+            );
+            ui.add(egui::Slider::new(&mut sh.time_seconds, -1.0..=1.0).text("time (s)"));
+            ui.add(egui::Slider::new(&mut sh.rect_count, 1..=100).text("Rectangle count"));
+            ui.add(sh);
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                ui.horizontal(|ui| {
-                    ui.spacing_mut().item_spacing.x = 0.0;
-                    ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-                    ui.label(" and ");
-                    ui.hyperlink_to(
-                        "eframe",
-                        "https://github.com/emilk/egui/tree/master/crates/eframe",
-                    );
-                    ui.label(".");
-                });
+                egui::warn_if_debug_build(ui);
+                ui.hyperlink_to(
+                    "try-egui-eframe",
+                    "https://github.com/nclack/try-egui-eframe",
+                );
             });
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-
-            ui.heading("eframe template");
-            ui.hyperlink("https://github.com/emilk/eframe_template");
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
-            ui.label(format!("Hey there: {:?}", label));
             ui.add(im);
-            ui.label("AFTER THE IMAGE");
-            if let Some(sh) = sh {
-                ui.color_edit_button_rgba_unmultiplied(&mut sh.fill_color);
-                ui.color_edit_button_rgba_unmultiplied(&mut sh.line_color);
-                ui.add(
-                    egui::Slider::new(&mut sh.line_width_px, 0.0..=10.0).text("line width (px)"),
-                );
-                ui.add(
-                    egui::Slider::new(&mut sh.corner_radius_px, 0.0..=50.0)
-                        .text("corner radius (px)"),
-                );
-                ui.add(egui::Slider::new(&mut sh.time_seconds, -1.0..=1.0).text("time (s)"));
-                ui.add(egui::Slider::new(&mut sh.rect_count, 1..=100).text("Rectangle count"));
-                ui.add(sh);
-            } else {
-                ui.label("MyShader failed to init");
-            }
-            egui::warn_if_debug_build(ui);
         });
-
-        if false {
-            egui::Window::new("Window").show(ctx, |ui| {
-                ui.label("Windows can be moved by dragging them.");
-                ui.label("They are automatically sized based on contents.");
-                ui.label("You can turn on resizing and scrolling if you like.");
-                ui.label("You would normally choose either panels OR windows.");
-            });
-        }
     }
 
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        info!("SAVE SETTINGS");
         eframe::set_value(storage, eframe::APP_KEY, self);
     }
 }

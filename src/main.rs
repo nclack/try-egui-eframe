@@ -4,14 +4,17 @@
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
 fn main() -> eframe::Result<()> {
+    use log::info;
+
     dotenv::dotenv().ok();
     pretty_env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
+    info!("Logging enabled");
 
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(
-        "eframe template",
+        "try_egui_eframe",
         native_options,
-        Box::new(|cc| Box::new(try_egui_eframe::TemplateApp::new(cc))),
+        Box::new(|cc| Box::new(try_egui_eframe::MainApp::new(cc))),
     )
 }
 
@@ -28,7 +31,7 @@ fn main() {
             .start(
                 "the_canvas_id", // hardcode it
                 web_options,
-                Box::new(|cc| Box::new(try_egui_eframe::TemplateApp::new(cc))),
+                Box::new(|cc| Box::new(try_egui_eframe::MainApp::new(cc))),
             )
             .await
             .expect("failed to start eframe");

@@ -12,6 +12,12 @@ impl Widget for &mut MyImage {
                 .load_texture("my-image", egui::ColorImage::example(), Default::default())
         });
 
-        ui.image(texture, texture.size_vec2())
+        ui.image(texture)
+    }
+}
+
+impl std::fmt::Debug for MyImage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MyImage").finish()
     }
 }

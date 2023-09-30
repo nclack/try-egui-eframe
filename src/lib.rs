@@ -5,4 +5,4 @@ mod myimage;
 mod myshader;
 mod oreb;
 
-pub use app::TemplateApp;
+pub use app::MainApp;

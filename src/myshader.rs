@@ -1,10 +1,13 @@
-use std::{f32::consts::PI, sync::Arc};
+use std::f32::consts::PI;
 
-use eframe::{egui_wgpu::CallbackFn, CreationContext};
-use egui::{PaintCallback, Widget};
+use eframe::{egui_wgpu, CreationContext};
+use egui::Widget;
+use serde::{Deserialize, Serialize};
 
 use crate::oreb::{self, Vertex};
 
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
+#[serde(default)]
 pub struct MyShader {
     pub line_width_px: f32,
     pub corner_radius_px: f32,
@@ -14,23 +17,28 @@ pub struct MyShader {
     pub fill_color: [f32; 4],
 }
 
-impl MyShader {
-    pub fn new<'a>(cc: &'a CreationContext<'a>) -> Option<Self> {
-        let rc = cc.wgpu_render_state.clone()?;
-        let painter = oreb::Painter::new(&rc);
-
-        // Because the graphics pipeline must have the same lifetime as the egui render pass,
-        // instead of storing the pipeline in our `MyShader` struct, we insert it into the
-        // `paint_callback_resources` type map, which is stored alongside the render pass.
-        rc.renderer.write().paint_callback_resources.insert(painter);
-        Some(Self {
+impl Default for MyShader {
+    fn default() -> Self {
+        Self {
             line_width_px: 0.5,
             corner_radius_px: 0.0,
             rect_count: 20,
             time_seconds: 0.0,
             line_color: [1.0, 0.6, 0.1, 0.5],
             fill_color: [0.8, 0.8, 0.8, 0.2],
-        })
+        }
+    }
+}
+
+impl MyShader {
+    pub fn init<'a>(&self, cc: &'a CreationContext<'a>) {
+        let rc = cc.wgpu_render_state.clone().unwrap();
+        let painter = oreb::Painter::new(&rc);
+
+        // Because the graphics pipeline must have the same lifetime as the egui render pass,
+        // instead of storing the pipeline in our `MyShader` struct, we insert it into the
+        // `paint_callback_resources` type map, which is stored alongside the render pass.
+        rc.renderer.write().callback_resources.insert(painter);
     }
 }
 
@@ -41,44 +49,63 @@ impl Widget for &mut MyShader {
             egui::Sense::focusable_noninteractive(),
         );
 
-        let MyShader {
-            line_width_px,
-            corner_radius_px,
-            rect_count,
-            time_seconds,
-            line_color,
-            fill_color,
-        } = *self;
-        let callback = CallbackFn::new()
-            .prepare(move |_device, queue, _encoder, resources| {
-                let painter: &mut oreb::Painter = resources.get_mut().unwrap();
-                let (vertices, indices) =
-                    encode_geometry(&make_rects(time_seconds, rect_count, -0.9, 0.9, -0.9, 0.9));
-                painter.set_geometry(queue, &vertices, &indices);
-                painter.set_uniforms(
-                    queue,
-                    // TODO: styling?
-                    &oreb::PainterSettings {
-                        // raw
-                        edge: line_color,
-                        fill: fill_color,
-                        line_width_px,
-                        corner_radius_px,
-                    },
-                );
-                Vec::new()
-            })
-            .paint(move |_info, render_pass, resources| {
-                let painter: &oreb::Painter = resources.get().unwrap();
-                painter.paint(render_pass);
-            });
-
-        ui.painter().add(PaintCallback {
-            rect,
-            callback: Arc::new(callback),
-        });
+        ui.painter()
+            .add(egui_wgpu::Callback::new_paint_callback(rect, *self));
 
         response
+    }
+}
+
+impl egui_wgpu::CallbackTrait for MyShader {
+    fn paint<'a>(
+        &'a self,
+        _info: egui::PaintCallbackInfo,
+        render_pass: &mut eframe::wgpu::RenderPass<'a>,
+        callback_resources: &'a egui_wgpu::CallbackResources,
+    ) {
+        let painter: &oreb::Painter = callback_resources.get().unwrap();
+        painter.paint(render_pass);
+    }
+
+    fn prepare(
+        &self,
+        _device: &eframe::wgpu::Device,
+        queue: &eframe::wgpu::Queue,
+        _egui_encoder: &mut eframe::wgpu::CommandEncoder,
+        callback_resources: &mut egui_wgpu::CallbackResources,
+    ) -> Vec<eframe::wgpu::CommandBuffer> {
+        let painter: &mut oreb::Painter = callback_resources.get_mut().unwrap();
+        let (vertices, indices) = encode_geometry(&make_rects(
+            self.time_seconds,
+            self.rect_count,
+            -0.9,
+            0.9,
+            -0.9,
+            0.9,
+        ));
+        painter.set_geometry(queue, &vertices, &indices);
+        painter.set_uniforms(
+            queue,
+            // TODO: styling?
+            &oreb::PainterSettings {
+                // raw
+                edge: self.line_color,
+                fill: self.fill_color,
+                line_width_px: self.line_width_px,
+                corner_radius_px: self.corner_radius_px,
+            },
+        );
+        Vec::new()
+    }
+
+    fn finish_prepare(
+        &self,
+        _device: &eframe::wgpu::Device,
+        _queue: &eframe::wgpu::Queue,
+        _egui_encoder: &mut eframe::wgpu::CommandEncoder,
+        _callback_resources: &mut egui_wgpu::CallbackResources,
+    ) -> Vec<eframe::wgpu::CommandBuffer> {
+        Vec::new()
     }
 }
 
