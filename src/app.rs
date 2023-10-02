@@ -1,33 +1,18 @@
 use log::info;
 
-use crate::{myimage::MyImage, myshader::MyShader};
+use crate::{myshader::MyShader, widgets::player};
 
-#[derive(serde::Deserialize, serde::Serialize, Debug)]
+#[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
 #[serde(default)]
 pub struct MainApp {
-    // this how you opt-out of serialization of a member
-    #[serde(skip)]
-    value: f32,
-
-    #[serde(skip)]
-    im: MyImage,
-
     sh: MyShader,
-}
-
-impl Default for MainApp {
-    fn default() -> Self {
-        Self {
-            value: 2.7,
-            im: MyImage::default(),
-            sh: MyShader::default(),
-        }
-    }
+    player: player::PlayerState,
 }
 
 impl MainApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        egui_extras::install_image_loaders(&cc.egui_ctx);
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
@@ -45,10 +30,8 @@ impl MainApp {
 }
 
 impl eframe::App for MainApp {
-    /// Called each time the UI needs repainting, which may be many times per second.
-    /// Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let Self { value: _, im, sh } = self;
+        let Self { sh, player } = self;
 
         #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -66,19 +49,25 @@ impl eframe::App for MainApp {
             ui.heading("Rounded rectangles");
 
             ui.horizontal(|ui| {
-                ui.color_edit_button_rgba_unmultiplied(&mut sh.fill_color);
+                ui.color_edit_button_rgba_unmultiplied(&mut sh.style.fill);
                 ui.label("fill");
                 ui.add_space(10.0);
-                ui.color_edit_button_rgba_unmultiplied(&mut sh.line_color);
+                ui.color_edit_button_rgba_unmultiplied(&mut sh.style.edge);
                 ui.label("edge");
             });
-            ui.add(egui::Slider::new(&mut sh.line_width_px, 0.0..=10.0).text("line width (px)"));
             ui.add(
-                egui::Slider::new(&mut sh.corner_radius_px, 0.0..=50.0).text("corner radius (px)"),
+                egui::Slider::new(&mut sh.style.line_width_px, 0.0..=10.0).text("line width (px)"),
             );
-            ui.add(egui::Slider::new(&mut sh.time_seconds, -1.0..=1.0).text("time (s)"));
+            ui.add(
+                egui::Slider::new(&mut sh.style.corner_radius_px, 0.0..=50.0)
+                    .text("corner radius (px)"),
+            );
             ui.add(egui::Slider::new(&mut sh.rect_count, 1..=100).text("Rectangle count"));
-            ui.add(sh);
+            ui.add(*sh); // FIXME: more like a custom paintable then a widget
+            ui.add(player::Controller::new(
+                &mut self.player,
+                &mut sh.time_seconds,
+            ));
 
             ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                 egui::warn_if_debug_build(ui);
@@ -90,7 +79,7 @@ impl eframe::App for MainApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.add(im);
+            ui.heading("Central Panel");
         });
     }
 

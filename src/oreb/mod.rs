@@ -4,6 +4,7 @@ use eframe::{
 };
 use egui_wgpu::wgpu;
 use log::debug;
+use serde::{Deserialize, Serialize};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     vertex_attr_array, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
@@ -46,7 +47,7 @@ impl Vertex {
 }
 
 #[repr(C, align(16))]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
 pub struct PainterSettings {
     pub edge: [f32; 4],
     pub fill: [f32; 4],
