@@ -1,45 +1,124 @@
 use std::f32::consts::PI;
 
 use eframe::{egui_wgpu, CreationContext};
-use egui::Widget;
+use egui::{vec2, Align, Layout, Widget};
+use log::info;
 use serde::{Deserialize, Serialize};
 
-use crate::oreb;
+use crate::widgets::player::{self, PlayerState};
+
+use super::painter::{RectPainter, RectPainterSettings, Vertex};
+
+#[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
+#[serde(default)]
+pub struct WavyRectanglesWithControls {
+    wavy_rectangles: WavyRectangles,
+    player: PlayerState,
+}
+
+impl WavyRectanglesWithControls {
+    pub fn setup_renderer<'a>(&mut self, cc: &'a CreationContext<'a>) {
+        self.wavy_rectangles.setup_renderer(cc);
+    }
+}
+
+impl Widget for &mut WavyRectanglesWithControls {
+    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
+        let WavyRectanglesWithControls {
+            wavy_rectangles,
+            player,
+        } = self;
+
+        let w = ui.available_size_before_wrap().min_elem();
+
+        ui.allocate_ui_with_layout(
+            vec2(w, w),
+            egui::Layout::top_down_justified(egui::Align::Center),
+            |ui| {
+                ui.horizontal(|ui| {
+                    ui.color_edit_button_rgba_unmultiplied(&mut wavy_rectangles.style.fill);
+                    ui.label("fill");
+                    ui.add_space(10.0);
+                    ui.color_edit_button_rgba_unmultiplied(&mut wavy_rectangles.style.edge);
+                    ui.label("edge");
+                });
+                ui.add(
+                    egui::Slider::new(&mut wavy_rectangles.style.line_width_px, 0.0..=10.0)
+                        .text("line width (px)"),
+                );
+                ui.add(
+                    egui::Slider::new(&mut wavy_rectangles.style.corner_radius_px, 0.0..=50.0)
+                        .text("corner radius (px)"),
+                );
+                ui.add(
+                    egui::Slider::new(&mut wavy_rectangles.rect_count, 1..=100)
+                        .text("Rectangle count"),
+                );
+                ui.allocate_ui_with_layout(
+                    ui.available_size_before_wrap(),
+                    Layout::bottom_up(Align::Min),
+                    |ui| {
+                        ui.add(player::Controller::new(
+                            player,
+                            &mut wavy_rectangles.time_seconds,
+                        ));
+                        ui.add(*wavy_rectangles);
+                    },
+                );
+            },
+        )
+        .response
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 #[serde(default)]
-pub struct MyShader {
+pub struct WavyRectangles {
     pub rect_count: u32,
     pub time_seconds: f32,
-    pub style: oreb::PainterSettings,
+    pub style: RectPainterSettings,
+
+    #[serde(skip)]
+    id: Option<usize>,
 }
 
-impl Default for MyShader {
+impl Default for WavyRectangles {
     fn default() -> Self {
         Self {
             rect_count: 20,
             time_seconds: 0.0,
             style: Default::default(),
+            id: None,
         }
     }
 }
 
-impl MyShader {
-    pub fn init<'a>(&self, cc: &'a CreationContext<'a>) {
+impl WavyRectangles {
+    pub fn setup_renderer<'a>(&mut self, cc: &'a CreationContext<'a>) {
         let rc = cc.wgpu_render_state.clone().unwrap();
-        let painter = oreb::Painter::new(&rc);
+        let painter = RectPainter::new(&rc);
 
         // Because the graphics pipeline must have the same lifetime as the egui render pass,
         // instead of storing the pipeline in our `MyShader` struct, we insert it into the
         // `paint_callback_resources` type map, which is stored alongside the render pass.
-        rc.renderer.write().callback_resources.insert(painter);
+        // rc.renderer.write().callback_resources.insert(painter);
+
+        let mut renderer = rc.renderer.write();
+        let e = renderer
+            .callback_resources
+            .entry::<Vec<RectPainter>>()
+            .or_insert(Vec::new());
+        self.id = Some(e.len());
+        e.push(painter);
     }
 }
 
-impl Widget for MyShader {
+impl Widget for WavyRectangles {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
+        let w = ui.available_size_before_wrap().min_elem();
+
         let (rect, response) = ui.allocate_exact_size(
-            egui::Vec2::splat(300.0),
+            egui::Vec2::splat(w),
             egui::Sense::focusable_noninteractive(),
         );
 
@@ -50,15 +129,18 @@ impl Widget for MyShader {
     }
 }
 
-impl egui_wgpu::CallbackTrait for MyShader {
+impl egui_wgpu::CallbackTrait for WavyRectangles {
     fn paint<'a>(
         &'a self,
         _info: egui::PaintCallbackInfo,
         render_pass: &mut eframe::wgpu::RenderPass<'a>,
         callback_resources: &'a egui_wgpu::CallbackResources,
     ) {
-        let painter: &oreb::Painter = callback_resources.get().unwrap();
-        painter.paint(render_pass);
+        if let Some(id) = self.id {
+            let painter: &RectPainter =
+                callback_resources.get::<Vec<_>>().unwrap().get(id).unwrap();
+            painter.paint(render_pass);
+        }
     }
 
     fn prepare(
@@ -68,18 +150,24 @@ impl egui_wgpu::CallbackTrait for MyShader {
         _egui_encoder: &mut eframe::wgpu::CommandEncoder,
         callback_resources: &mut egui_wgpu::CallbackResources,
     ) -> Vec<eframe::wgpu::CommandBuffer> {
-        let painter: &mut oreb::Painter = callback_resources.get_mut().unwrap();
-        let (vertices, indices) = encode_geometry(&make_rects(
-            self.time_seconds,
-            5.0,
-            self.rect_count,
-            -0.9,
-            0.9,
-            -0.9,
-            0.9,
-        ));
-        painter.set_geometry(queue, &vertices, &indices);
-        painter.set_uniforms(queue, &self.style);
+        if let Some(id) = self.id {
+            let painter: &mut RectPainter = callback_resources
+                .get_mut::<Vec<_>>()
+                .unwrap()
+                .get_mut(id)
+                .unwrap();
+            let (vertices, indices) = encode_geometry(&make_rects(
+                self.time_seconds,
+                5.0,
+                self.rect_count,
+                -0.9,
+                0.9,
+                -0.9,
+                0.9,
+            ));
+            painter.set_geometry(queue, &vertices, &indices);
+            painter.set_uniforms(queue, &self.style);
+        }
         Vec::new()
     }
 
@@ -133,29 +221,32 @@ fn make_rects(
         .collect()
 }
 
-fn encode_geometry(rects: &[Rect]) -> (Vec<oreb::Vertex>, Vec<u32>) {
-    fn mk_vertices(rect: &Rect) -> [oreb::Vertex; 3] {
+fn encode_geometry(rects: &[Rect]) -> (Vec<Vertex>, Vec<u32>) {
+    fn mk_vertices(rect: &Rect) -> [Vertex; 3] {
         let [cx, cy] = rect.center;
         let [half_w, half_h] = rect.size.map(|e| 0.5 * e);
         let side = half_h + half_w;
         let (s, c) = rect.orientation_radians.sin_cos();
+
+        // The rectangle lies on two sides of the triangle
+        // FIXME: need a 1 px padding on those sides for anti-aliasing.
 
         // create an isosceles right triangle within which the rect will be painted
         // center is at uv: [0,0]
         // rect's [w,h] in uv coords is [1,1]
         [
             // top-left
-            oreb::Vertex {
+            Vertex {
                 xyz: [-half_w, -half_h, 0.0],
                 uv: [-0.5, -0.5],
             },
             // bottom-right
-            oreb::Vertex {
+            Vertex {
                 xyz: [2.0 * half_h - half_w, -half_h, 0.0],
                 uv: [-0.5 + side / half_h, -0.5],
             },
             // bottom-left
-            oreb::Vertex {
+            Vertex {
                 xyz: [-half_w, 2.0 * half_w - half_h, 0.0],
                 uv: [-0.5, -0.5 + side / half_w],
             },

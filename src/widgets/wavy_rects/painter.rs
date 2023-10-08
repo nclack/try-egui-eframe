@@ -9,12 +9,10 @@ use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     vertex_attr_array, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
     BindGroupLayoutEntry, BindingType, BlendState, Buffer, BufferBindingType, BufferDescriptor,
-    BufferUsages, Color, ColorTargetState, ColorWrites, CommandEncoderDescriptor, Face,
-    FragmentState, FrontFace, IndexFormat, LoadOp, MultisampleState, Operations,
-    PipelineLayoutDescriptor, PolygonMode, PrimitiveState, PrimitiveTopology, RenderPass,
-    RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor,
-    ShaderModuleDescriptor, ShaderSource, ShaderStages, SurfaceError, TextureView, VertexAttribute,
-    VertexBufferLayout, VertexState, VertexStepMode,
+    BufferUsages, ColorTargetState, ColorWrites, Face, FragmentState, FrontFace, IndexFormat,
+    MultisampleState, PipelineLayoutDescriptor, PolygonMode, PrimitiveState, PrimitiveTopology,
+    RenderPass, RenderPipeline, RenderPipelineDescriptor, ShaderModuleDescriptor, ShaderSource,
+    ShaderStages, VertexAttribute, VertexBufferLayout, VertexState, VertexStepMode,
 };
 
 unsafe fn as_u8_slice<T>(x: &[T]) -> &[u8] {
@@ -48,14 +46,14 @@ impl Vertex {
 
 #[repr(C, align(16))]
 #[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-pub struct PainterSettings {
+pub struct RectPainterSettings {
     pub edge: [f32; 4],
     pub fill: [f32; 4],
     pub line_width_px: f32,
     pub corner_radius_px: f32,
 }
 
-impl PainterSettings {
+impl RectPainterSettings {
     fn descriptor<'a>() -> BufferDescriptor<'a> {
         BufferDescriptor {
             label: None,
@@ -66,7 +64,7 @@ impl PainterSettings {
     }
 }
 
-impl Default for PainterSettings {
+impl Default for RectPainterSettings {
     fn default() -> Self {
         Self {
             edge: [0.0, 0.0, 0.0, 1.0],
@@ -77,7 +75,7 @@ impl Default for PainterSettings {
     }
 }
 
-pub struct Painter {
+pub struct RectPainter {
     pipeline: RenderPipeline,
     bind_group: BindGroup,
     uniforms: Buffer,
@@ -87,7 +85,7 @@ pub struct Painter {
     index_count: usize,
 }
 
-impl Painter {
+impl RectPainter {
     pub(crate) fn new(rc: &RenderState) -> Self {
         // Memory layout for the painter
         let layout = rc
@@ -109,7 +107,7 @@ impl Painter {
                 ],
             });
 
-        let uniforms = rc.device.create_buffer(&PainterSettings::descriptor());
+        let uniforms = rc.device.create_buffer(&RectPainterSettings::descriptor());
 
         let bind_group = rc.device.create_bind_group(&BindGroupDescriptor {
             label: Some("My painter bind group"),
@@ -201,9 +199,8 @@ impl Painter {
         // self.rc.queue.submit(None);
     }
 
-    pub fn set_uniforms(&self, queue: &Queue, settings: &PainterSettings) {
+    pub fn set_uniforms(&self, queue: &Queue, settings: &RectPainterSettings) {
         queue.write_buffer(&self.uniforms, 0, unsafe { as_raw_bytes(settings) });
-        // self.rc.commands.submit(None);
     }
 
     /// Set up the render pass for the frame.
@@ -233,35 +230,5 @@ impl Painter {
             IndexFormat::Uint32,
         );
         pass.draw_indexed(0..self.index_count as u32, 0, 0..1);
-    }
-
-    /// Setup a render pass that clears with `clear_color` and calls paint.
-    /// Submits the pass to the queue.
-    pub fn draw(
-        &self,
-        rc: &RenderState,
-        view: &TextureView,
-        clear_color: Color,
-    ) -> Result<(), SurfaceError> {
-        let mut commands = rc
-            .device
-            .create_command_encoder(&CommandEncoderDescriptor::default());
-        {
-            let mut pass = commands.begin_render_pass(&RenderPassDescriptor {
-                label: None,
-                color_attachments: &[Some(RenderPassColorAttachment {
-                    view,
-                    resolve_target: None,
-                    ops: Operations {
-                        load: LoadOp::Clear(clear_color),
-                        store: true,
-                    },
-                })],
-                depth_stencil_attachment: None,
-            });
-            self.paint(&mut pass);
-        }
-        rc.queue.submit(std::iter::once(commands.finish()));
-        Ok(())
     }
 }

@@ -1,11 +1,13 @@
-use egui::{include_image, vec2, ImageButton, NumExt, ProgressBar, Response, Sense, Widget};
+use egui::{
+    include_image, vec2, Align, ImageButton, Layout, NumExt, ProgressBar, Response, Sense, Vec2,
+    Widget,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Serialize, Deserialize, Debug)]
 pub struct PlayerState {
     is_playing: bool,
 
-    #[serde(skip)]
     last_pause_time: Option<f64>,
 }
 
@@ -36,6 +38,12 @@ impl<'a, 'b> Controller<'a, 'b> {
             progress_seconds,
         }
     }
+
+    pub fn size_hint(ui: &egui::Ui) -> Vec2 {
+        let width = ui.available_size_before_wrap().x.at_least(96.0);
+        let height = ui.spacing().interact_size.y;
+        vec2(width, height)
+    }
 }
 
 impl<'a, 'b> Widget for Controller<'a, 'b> {
@@ -49,15 +57,12 @@ impl<'a, 'b> Widget for Controller<'a, 'b> {
             last_pause_time,
         } = self.state;
 
-        let desired_width = ui.available_size_before_wrap().x.at_least(96.0);
-        let height = ui.spacing().interact_size.y;
-        let (_outer_rect, response) =
-            ui.allocate_exact_size(vec2(desired_width, height), Sense::hover());
+        let sz = Self::size_hint(ui);
 
-        ui.horizontal(|ui| {
+        ui.allocate_ui_with_layout(sz, Layout::left_to_right(Align::LEFT), |ui| {
             if ui
                 .add_sized(
-                    vec2(height, height),
+                    Vec2::splat(sz.y),
                     ImageButton::new(if *is_playing {
                         include_image!("assets/pause-solid.svg")
                     } else {
@@ -74,8 +79,7 @@ impl<'a, 'b> Widget for Controller<'a, 'b> {
                     .animate(*is_playing)
                     .text(format!("{secs:2.2} s")),
             );
-        });
-
-        response
+        })
+        .response
     }
 }

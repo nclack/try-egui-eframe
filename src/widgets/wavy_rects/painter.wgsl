@@ -6,7 +6,7 @@ struct Settings {
 }
 
 @group(0) @binding(0)
-var<uniform> setttings: Settings;
+var<uniform> settings: Settings;
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -48,8 +48,8 @@ fn sd_round_box(p: vec2<f32>, b: vec2<f32>, r: f32) -> f32 {
     return length(max(q, vec2<f32>())) + min(max(q.x, q.y), 0.0) - r;
 }
 
-fn premultiply(src:vec4<f32>)->vec4<f32> {
-    return vec4(src.rgb*src.a,src.a);
+fn premultiply(src: vec4<f32>) -> vec4<f32> {
+    return vec4(src.rgb * src.a, src.a);
 }
 
 @fragment
@@ -64,19 +64,16 @@ fn fs(in: VertexOutput) -> @location(0) vec4<f32> {
     let dy = length(vec2(duvdx.y, duvdy.y));
     let s = vec2(dx, dy);
 
-    let d = sd_round_box(in.tex_coords.xy / s, 0.5 / s, setttings.corner_radius_px);
+    let d = sd_round_box(in.tex_coords.xy / s, 0.5 / s, settings.corner_radius_px);
 
-    if (d < -setttings.line_width_px) {
-        let eps = d + setttings.line_width_px;
-        return premultiply(mix(setttings.edge, setttings.fill, saturate(-eps)));
-    } else if (d < 0.51) {
-        var color = setttings.edge;
-        color.a = saturate(0.5 - d)*setttings.edge.a;
-        return premultiply(color);
+    let fill = mix(settings.fill, vec4(0.0), saturate(d));
+
+    if settings.line_width_px < 1e-3 {
+        return premultiply(fill);
     } else {
-        discard;
-        // return vec4(in.tex_coords, 0.0, 1.0);
-        // let d = d * 0.05;
+        // attenuate alpha for sub-pixel line-widths
+        let edge = vec4(settings.edge.xyz, settings.edge.w * saturate(settings.line_width_px));
+        let eps = settings.line_width_px + d; // distance from inner edge of boundary
+        return premultiply(mix(mix(edge, fill, saturate(-eps)), vec4(0.0), saturate(d)));
     }
-    return vec4(0.0);
 }
