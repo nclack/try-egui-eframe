@@ -189,6 +189,7 @@ impl RectPainter {
     }
 
     pub fn set_geometry(&mut self, queue: &Queue, vertices: &[Vertex], indexes: &[u32]) {
+        puffin::profile_function!();
         self.vertex_count = vertices.len();
         self.index_count = indexes.len();
         queue.write_buffer(&self.vertices, 0, unsafe { as_u8_slice(vertices) });
@@ -200,11 +201,13 @@ impl RectPainter {
     }
 
     pub fn set_uniforms(&self, queue: &Queue, settings: &RectPainterSettings) {
+        puffin::profile_function!();
         queue.write_buffer(&self.uniforms, 0, unsafe { as_raw_bytes(settings) });
     }
 
     /// Set up the render pass for the frame.
     pub fn paint<'rp>(&'rp self, pass: &mut RenderPass<'rp>) {
+        puffin::profile_function!();
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.bind_group, &[]);
         debug!(

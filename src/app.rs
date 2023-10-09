@@ -1,3 +1,4 @@
+use egui::Button;
 use log::info;
 
 use crate::widgets::wavy_rects::ui::WavyRectanglesWithControls;
@@ -7,12 +8,14 @@ use crate::widgets::wavy_rects::ui::WavyRectanglesWithControls;
 pub struct MainApp {
     wavy_rectangles: WavyRectanglesWithControls,
     wavy_rectangles2: WavyRectanglesWithControls,
+    should_display_profiler: bool,
 }
 
 impl MainApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         egui_extras::install_image_loaders(&cc.egui_ctx);
+        puffin::set_scopes_on(true);
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
@@ -31,10 +34,17 @@ impl MainApp {
 
 impl eframe::App for MainApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        puffin::GlobalProfiler::lock().new_frame();
+
         let Self {
             wavy_rectangles,
             wavy_rectangles2,
+            should_display_profiler,
         } = self;
+
+        if *should_display_profiler {
+            *should_display_profiler = puffin_egui::profiler_window(ctx);
+        }
 
         #[cfg(not(target_arch = "wasm32"))] // no File->Quit on web pages!
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -49,12 +59,17 @@ impl eframe::App for MainApp {
         });
 
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::Min), |ui| {
                 egui::warn_if_debug_build(ui);
                 ui.hyperlink_to(
                     "try-egui-eframe",
                     "https://github.com/nclack/try-egui-eframe",
                 );
+                if !*should_display_profiler {
+                    if ui.add(Button::new("Open Profiler")).clicked() {
+                        *should_display_profiler = true;
+                    }
+                }
             });
         });
 

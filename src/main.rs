@@ -10,7 +10,11 @@ fn main() -> eframe::Result<()> {
     pretty_env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
     info!("Logging enabled");
 
-    let native_options = eframe::NativeOptions::default();
+    let native_options = eframe::NativeOptions {
+        vsync: false,
+        fullscreen: true,
+        ..Default::default()
+    };
     eframe::run_native(
         "try_egui_eframe",
         native_options,

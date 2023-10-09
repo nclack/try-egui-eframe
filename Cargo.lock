@@ -104,6 +104,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.75"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4668cab20f66d8d020e1fbc0ebe47217433c1b6c8f2040faf858554e394ace6"
+
+[[package]]
 name = "arboard"
 version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -173,6 +179,15 @@ name = "base64"
 version = "0.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ba43ea6f343b788c8764558649e08df62f86c6ef251fdaeb1ffd010a9ae50a2"
+
+[[package]]
+name = "bincode"
+version = "1.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1f45e9417d87227c7a56d22e471c6206462cba514c7590c09aff4cf6d1ddcad"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "bit-set"
@@ -435,6 +450,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d7439c3735f405729d52c3fbbe4de140eaf938a1fe47d227c27f8254d4302a5"
 
 [[package]]
+name = "deranged"
+version = "0.3.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2696e8a945f658fd14dc3b87242e6b80cd0f36ff04ea560fa39082368847946"
+
+[[package]]
 name = "directories-next"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -513,6 +534,7 @@ dependencies = [
  "egui",
  "egui-wgpu",
  "egui-winit",
+ "egui_glow",
  "image",
  "js-sys",
  "log",
@@ -520,6 +542,7 @@ dependencies = [
  "parking_lot",
  "percent-encoding",
  "pollster",
+ "puffin 0.16.0",
  "raw-window-handle",
  "ron",
  "serde",
@@ -544,6 +567,7 @@ dependencies = [
  "epaint",
  "log",
  "nohash-hasher",
+ "puffin 0.16.0",
  "ron",
  "serde",
 ]
@@ -557,6 +581,7 @@ dependencies = [
  "bytemuck",
  "epaint",
  "log",
+ "puffin 0.16.0",
  "thiserror",
  "type-map",
  "wgpu",
@@ -572,6 +597,7 @@ dependencies = [
  "arboard",
  "egui",
  "log",
+ "puffin 0.16.0",
  "raw-window-handle",
  "serde",
  "smithay-clipboard",
@@ -596,6 +622,23 @@ dependencies = [
  "serde",
  "tiny-skia",
  "usvg",
+]
+
+[[package]]
+name = "egui_glow"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce6726c08798822280038bbad2e32f4fc3cbed800cd51c6e34e99cd2d60cc1bc"
+dependencies = [
+ "bytemuck",
+ "egui",
+ "egui-winit",
+ "glow",
+ "log",
+ "memoffset",
+ "puffin 0.16.0",
+ "wasm-bindgen",
+ "web-sys",
 ]
 
 [[package]]
@@ -984,6 +1027,7 @@ checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
  "hashbrown 0.12.3",
+ "serde",
 ]
 
 [[package]]
@@ -1018,6 +1062,12 @@ dependencies = [
  "rustix",
  "windows-sys 0.48.0",
 ]
+
+[[package]]
+name = "itoa"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af150ab688ff2122fcef229be89cb50dd66af9e01a4ff320cc137eecc9bacc38"
 
 [[package]]
 name = "jni"
@@ -1140,6 +1190,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
+name = "lz4_flex"
+version = "0.11.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ea9b256699eda7b0387ffbc776dd625e28bde3918446381781245b7a50349d8"
+
+[[package]]
 name = "malloc_buf"
 version = "0.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1238,6 +1294,12 @@ dependencies = [
  "thiserror",
  "unicode-xid",
 ]
+
+[[package]]
+name = "natord"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "308d96db8debc727c3fd9744aac51751243420e46edf401010908da7f8d5e57c"
 
 [[package]]
 name = "ndk"
@@ -1566,6 +1628,54 @@ name = "profiling"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f89dff0959d98c9758c88826cc002e2c3d0b9dfac4139711d1f30de442f1139b"
+
+[[package]]
+name = "puffin"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76425abd4e1a0ad4bd6995dd974b52f414fca9974171df8e3708b3e660d05a21"
+dependencies = [
+ "anyhow",
+ "byteorder",
+ "cfg-if",
+ "instant",
+ "once_cell",
+]
+
+[[package]]
+name = "puffin"
+version = "0.17.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "39009d69b9d547c3ffa974a20648fa02f447c05bd0a664012b1ba5a5b06fb14e"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "byteorder",
+ "cfg-if",
+ "js-sys",
+ "lz4_flex",
+ "once_cell",
+ "parking_lot",
+ "serde",
+ "web-time",
+]
+
+[[package]]
+name = "puffin_egui"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c5af236782d21bdd5a6eb2f8cc9a91f8d601c073b7f7d568c95c26604cc12b87"
+dependencies = [
+ "egui",
+ "indexmap 1.9.3",
+ "natord",
+ "once_cell",
+ "puffin 0.17.0",
+ "serde",
+ "time",
+ "vec1",
+ "web-time",
+]
 
 [[package]]
 name = "quote"
@@ -1977,6 +2087,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "time"
+version = "0.3.29"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "426f806f4089c493dcac0d24c29c01e2c38baf8e30f1b716ee37e83d200b18fe"
+dependencies = [
+ "deranged",
+ "itoa",
+ "serde",
+ "time-core",
+ "time-macros",
+]
+
+[[package]]
+name = "time-core"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ef927ca75afb808a4d64dd374f00a2adf8d0fcff8e7b184af886c3c87ec4a3f3"
+
+[[package]]
+name = "time-macros"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4ad70d68dba9e1f8aceda7aa6711965dfec1cac869f311a51bd08b3a2ccbce20"
+dependencies = [
+ "time-core",
+]
+
+[[package]]
 name = "tiny-skia"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2044,6 +2182,8 @@ dependencies = [
  "instant",
  "log",
  "pretty_env_logger",
+ "puffin 0.17.0",
+ "puffin_egui",
  "serde",
  "wasm-bindgen-futures",
 ]
@@ -2157,6 +2297,12 @@ dependencies = [
  "strict-num",
  "svgtypes",
 ]
+
+[[package]]
+name = "vec1"
+version = "1.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bda7c41ca331fe9a1c278a9e7ee055f4be7f5eb1c2b72f079b4ff8b5fce9d5c"
 
 [[package]]
 name = "version_check"

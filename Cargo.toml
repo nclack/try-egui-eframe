@@ -13,6 +13,7 @@ eframe = { version = "0.23.0", default-features = false, features = [
     "default_fonts", # Embed the default egui fonts.
     "wgpu",          # Use the glow rendering backend. Alternative: "wgpu".
     "persistence",   # Enable restoring app state when restarting the app.
+    "puffin",        # instrumentation profiler
 ] }
 log = "0.4"
 instant = { version = "0.1.12", features = ["wasm-bindgen"] }
@@ -20,6 +21,8 @@ instant = { version = "0.1.12", features = ["wasm-bindgen"] }
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }
 egui_extras = { version = "0.23.0", features = ["all_loaders"] }
+puffin_egui = { version = "0.23.0", features = ["serde"] }
+puffin = { version = "0.17.0", features = ["web"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

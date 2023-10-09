@@ -136,6 +136,7 @@ impl egui_wgpu::CallbackTrait for WavyRectangles {
         render_pass: &mut eframe::wgpu::RenderPass<'a>,
         callback_resources: &'a egui_wgpu::CallbackResources,
     ) {
+        puffin::profile_function!();
         if let Some(id) = self.id {
             let painter: &RectPainter =
                 callback_resources.get::<Vec<_>>().unwrap().get(id).unwrap();
@@ -150,6 +151,7 @@ impl egui_wgpu::CallbackTrait for WavyRectangles {
         _egui_encoder: &mut eframe::wgpu::CommandEncoder,
         callback_resources: &mut egui_wgpu::CallbackResources,
     ) -> Vec<eframe::wgpu::CommandBuffer> {
+        puffin::profile_function!();
         if let Some(id) = self.id {
             let painter: &mut RectPainter = callback_resources
                 .get_mut::<Vec<_>>()
@@ -199,6 +201,7 @@ fn make_rects(
     y0: f32,
     y1: f32,
 ) -> Vec<Rect> {
+    puffin::profile_function!();
     let dx = (x1 - x0) / (steps + 1) as f32;
     let dy = y1 - y0;
     let sz = dx.max(0.1);
@@ -222,6 +225,7 @@ fn make_rects(
 }
 
 fn encode_geometry(rects: &[Rect]) -> (Vec<Vertex>, Vec<u32>) {
+    puffin::profile_function!();
     fn mk_vertices(rect: &Rect) -> [Vertex; 3] {
         let [cx, cy] = rect.center;
         let [half_w, half_h] = rect.size.map(|e| 0.5 * e);
