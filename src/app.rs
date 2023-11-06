@@ -1,13 +1,14 @@
 use egui::Button;
 use log::info;
 
-use crate::widgets::wavy_rects::ui::WavyRectanglesWithControls;
+use crate::widgets::{simple_image::ui::SimpleImage, wavy_rects::ui::WavyRectanglesWithControls};
 
 #[derive(serde::Deserialize, serde::Serialize, Debug, Default)]
 #[serde(default)]
 pub struct MainApp {
     wavy_rectangles: WavyRectanglesWithControls,
     wavy_rectangles2: WavyRectanglesWithControls,
+    simple_image: SimpleImage,
     should_display_profiler: bool,
 }
 
@@ -28,6 +29,7 @@ impl MainApp {
         };
         app.wavy_rectangles.setup_renderer(cc);
         app.wavy_rectangles2.setup_renderer(cc);
+        app.simple_image.setup_renderer(cc);
         app
     }
 }
@@ -39,6 +41,7 @@ impl eframe::App for MainApp {
         let Self {
             wavy_rectangles,
             wavy_rectangles2,
+            simple_image,
             should_display_profiler,
         } = self;
 
@@ -79,6 +82,7 @@ impl eframe::App for MainApp {
                 columns[0].add(wavy_rectangles);
                 columns[1].add(wavy_rectangles2);
             });
+            ui.add(simple_image);
         });
     }
 

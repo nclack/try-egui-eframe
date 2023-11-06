@@ -1,6 +1,5 @@
 use egui::{
-    include_image, vec2, Align, ImageButton, Layout, NumExt, ProgressBar, Response, Sense, Vec2,
-    Widget,
+    include_image, vec2, Align, ImageButton, Layout, NumExt, ProgressBar, Response, Vec2, Widget,
 };
 use serde::{Deserialize, Serialize};
 

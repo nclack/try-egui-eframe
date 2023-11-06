@@ -3,7 +3,7 @@ use eframe::{
     wgpu::Queue,
 };
 use egui_wgpu::wgpu;
-use log::debug;
+use log::trace;
 use serde::{Deserialize, Serialize};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -193,11 +193,7 @@ impl RectPainter {
         self.vertex_count = vertices.len();
         self.index_count = indexes.len();
         queue.write_buffer(&self.vertices, 0, unsafe { as_u8_slice(vertices) });
-        debug!("Writing index buffer. {:?}", unsafe {
-            as_u8_slice(indexes)
-        });
         queue.write_buffer(&self.indexes, 0, unsafe { as_u8_slice(indexes) });
-        // self.rc.queue.submit(None);
     }
 
     pub fn set_uniforms(&self, queue: &Queue, settings: &RectPainterSettings) {
@@ -210,7 +206,7 @@ impl RectPainter {
         puffin::profile_function!();
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.bind_group, &[]);
-        debug!(
+        trace!(
             "vertex count {} size {} {:?}",
             self.vertex_count,
             self.vertices.size(),
@@ -221,7 +217,7 @@ impl RectPainter {
             self.vertices
                 .slice(..(std::mem::size_of::<Vertex>() * self.vertex_count) as u64),
         );
-        debug!(
+        trace!(
             "index count {} size {} {:?}",
             self.index_count,
             self.indexes.size(),

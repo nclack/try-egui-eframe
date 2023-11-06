@@ -2,7 +2,6 @@ use std::f32::consts::PI;
 
 use eframe::{egui_wgpu, CreationContext};
 use egui::{vec2, Align, Layout, Widget};
-use log::info;
 use serde::{Deserialize, Serialize};
 
 use crate::widgets::player::{self, PlayerState};
@@ -78,6 +77,8 @@ pub struct WavyRectangles {
     pub time_seconds: f32,
     pub style: RectPainterSettings,
 
+    // enables multiple instances of the shader state so we can use the same
+    // pipeline for multiple visuals at the same time.
     #[serde(skip)]
     id: Option<usize>,
 }
@@ -102,6 +103,13 @@ impl WavyRectangles {
         // instead of storing the pipeline in our `MyShader` struct, we insert it into the
         // `paint_callback_resources` type map, which is stored alongside the render pass.
         // rc.renderer.write().callback_resources.insert(painter);
+
+        // I think the idea with the callback resources is that those resources
+        // are stateless somehow, so that they can be shared between widgets.
+        // e.g. the pipeline is invariant. The particular bindings vary though.
+        // Maybe their lifetime is different?
+        // Anyway, I think I've done it wrong here. Should see if I can
+        // separate the bindings.
 
         let mut renderer = rc.renderer.write();
         let e = renderer
